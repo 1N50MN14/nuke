@@ -18,25 +18,30 @@ import 'package:nuke/nuke.dart';
 
 class MyHomePage extends StatelessWidget
 {
-  final counter = 0.rx|'counter';
+  final counter = 0.$at.$ref('ref/0'); //<-- more on $ref below
 
   MyHomePage({Key key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context)=>Scaffold
-  (
-    appBar: AppBar(),
-    body: Center
+  Widget build(BuildContext context)
+  {
+    return Scaffold
     (
-      child: $Rx(const ['counter'], (ctx)=>Text('${'counter'.get.value}'))
-    ),
-    floatingActionButton: FloatingActionButton
-    (
-      onPressed:()=>'counter'.get.value++,
-      tooltip: 'Increment',
-      child: const Icon(Icons.add),
-    ),
-  );
+      body: Center
+      (
+        child: $RX
+        (
+          matchers: const ['ref/0'],
+          builder: (context) => Text($ref('ref/0').value.toString())
+        )
+      ),
+      floatingActionButton: FloatingActionButton
+      (
+        onPressed: ()=>$ref('ref/0').value++,
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
 }
 ```
 
@@ -47,38 +52,60 @@ Hence the name.
 Let's break it down:
 
 ```dart
-final counter = 0.rx|'counter';
+final counter = 0.$at.$ref('ref/0');
 ```
 
 - `0` is our initial value
-- `.rx` syntax sugar, makes the value observalbe
-- `|` pipes values changes at specified reference
-- `counter` the observable reference
+- `.$at.$ref` syntax sugar, makes the value observalbe, referenced at 'ref/0'
 
 
 ```dart
-$Rx(const ['counter'], (ctx)=>Text('${'counter'.get.value}')
+child: $RX
+(
+  matchers: const ['ref/:any'],
+  builder: (context) => Text($ref('ref/0').value.toString())
+)
 ```
 
-- `$Rx` is the observer widget name
-- `['counters']` scoped reference names/regex matches that trigger rebuilds
+- `$RX` is the observer widget name
+- `matchers` a list of names / regex scopes the widget should listen to
+- `$ref('ref/0').value` obtain the value by reference
 
 
 ```dart
-'counter'.get.value++
+$ref('ref/0').value++
 ```
 
-- `'counter'.get` syntax sugar, retreives the observable
-- `value++` increment value
+- Obtain and increment the value by its reference
+
+More on matchers, consider this:
+
+```dart
+final counter1 = 0.$at.$ref('ref/0');
+final counter2 = 0.$at.$ref('ref/1');
+
+@override
+Widget build(BuildContext context)=>
+  $RX(matchers: const ['ref/:any'], builder(_)=>Container());
+```
+
+The above widget will be rebuilt whenever either `counter1` or `counter2`
+change their values.
 
 
-## Counter app ("tidy" version)
+
+## Counter app ("class"/whatever version)
+
+You can also use Nuke the old fashioned way, using references or the combination
+of both. Rerferences make most sense in deeply nested objects and collections as
+illustrated in the multi counter app example below.
 
 ```dart
 import 'package:nuke/nuke.dart';
 
-class StateX {
-  final _counter = 0.rx|'counter';
+class StateX
+{
+  final _counter = 0.$at.$ref('ref/0');
   int get counter => _counter.value;
   void increment() => _counter.value++;
 }
@@ -110,28 +137,26 @@ class MyHomePage extends StatelessWidget
 ## Banana republic multi counter app
 
 ```dart
-import 'package:nuke/nuke.dart';
-
-class MyHomePage extends StatelessWidget
+class MyHomePage2 extends StatelessWidget
 {
   final counters = {
     'x': 'y',
     'a': {
       'b': {
-        'c': 0.rx|'counter/0',
-        'wtf': [0.rx|'counter/1', 0.rx|'counter/2'],
+        'c': 0.$at.$ref('counter/0'),
+        'wtf': [0.$at.$ref('counter/1'), 0.$at.$ref('counter/2')],
       },
     }
   };
 
   int sum()=>
-    Iterable.generate(3).map((i)=>'counter/$i'.get.value as int)
+    Iterable.generate(3).map((i)=>$ref('counter/$i').value as int)
       .reduce((a,b )=>a+b);
 
   void increment()=>
-    Iterable.generate(3).forEach((i)=>'counter/$i'.get.value++);
+    Iterable.generate(3).forEach((i)=>$ref('counter/$i').value++);
 
-  MyHomePage({Key key}) : super(key: key);
+  MyHomePage2({Key key}) : super(key: key);
 
   @override
   Widget build(BuildContext context)
@@ -143,24 +168,23 @@ class MyHomePage extends StatelessWidget
         child: Wrap(spacing:20, children:
         [
           //Listens to all observables on counter/:any
-          $Rx(const ['counter/:any'], (context) =>Text('${sum()}')),
+          $RX(matchers: const ['counter/:any'], builder: (context) =>Text('${sum()}')),
 
           //Listens only to counter/1
-          $Rx(const ['counter/1'], (context) => Text('${'counter/1'.get.value}')),
+          $RX(matchers: const ['counter/1'], builder: (context) => Text('${$ref('counter/1').value}')),
 
           //Listens only to counter/2
-          $Rx(const ['counter/2'], (context) => Text('${'counter/2'.get.value}')),
+          $RX(matchers: const ['counter/2'], builder:(context) => Text('${$ref('counter/2').value}')),
         ],),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed:increment, child: const Icon(Icons.add), ),
     );
-
   }
 }
 ```
 
-## Bonus!!
+## Bonus
 
 ```dart
 import 'package:nuke/nuke.dart';
