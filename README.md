@@ -86,7 +86,7 @@ final counter2 = 0.$at.$ref('ref/1');
 
 @override
 Widget build(BuildContext context)=>
-  $RX(matchers: const ['ref/:any'], builder(_)=>Container());
+  $RX(matchers: const ['ref/0'], builder(_)=>Container());
 ```
 
 The above widget will be rebuilt whenever either `counter1` or `counter2`
