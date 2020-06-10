@@ -134,6 +134,13 @@ class MyHomePage extends StatelessWidget
 }
 ```
 
+References allows observers to live outside the widget scope, anywhere in the app,
+and can be access within multiple places around the app!
+
+A practical example would be a "Settings" screen where value X is utilized within
+the underlying widget, saving hassle of passing values between the two separate
+widgets and updating each's local state.
+
 ## Banana republic multi counter app
 
 ```dart
