@@ -1,4 +1,4 @@
 library nuke;
 
-export 'nuke.impl.dart' show Nuke, XrX, XrT, XrV, NukeEvent, NukeRx, SubscriptionKey;
-export 'nuke.wgt.dart' show $Rx;
+export 'nuke.impl.dart' show Nuke, XrX, NukeEvent, NukeRx, SubscriptionKey, $ref;
+export 'nuke.wgt.dart' show $RX;
