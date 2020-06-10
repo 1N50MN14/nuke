@@ -1,19 +1,19 @@
 import 'package:flutter/widgets.dart';
 import 'nuke.impl.dart';
 
-class $Rx extends StatefulWidget
+class $RX extends StatefulWidget
 {
-  final Iterable<String> match;
+  final Iterable<String> matchers;
 
-  final Widget Function(BuildContext context, ) builder;
+  @required final Widget Function(BuildContext context, ) builder;
 
-  const $Rx(this.match, this.builder, {Key key, })
+  const $RX({this.matchers, this.builder, Key key, })
     : super(key: key);
 
   @override _NukeWidgetState createState() => _NukeWidgetState();
 }
 
-class _NukeWidgetState extends State<$Rx>
+class _NukeWidgetState extends State<$RX>
 {
   final _instance = Nuke();
 
@@ -25,7 +25,7 @@ class _NukeWidgetState extends State<$Rx>
     super.initState();
 
     subscriptionKey = _instance.subscribe(widget.key.toString(),
-      widget.match, (event) => setState(() {}));
+      widget.matchers ?? [], (event) => setState(() {}));
   }
 
   @override
