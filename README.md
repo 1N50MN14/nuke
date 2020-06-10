@@ -122,7 +122,7 @@ class MyHomePage extends StatelessWidget
     appBar: AppBar(),
     body: Center
     (
-      child: $Rx(const ['counter'], (ctx)=>Text('${state.counter}'))
+      child: $RX(const ['counter'], (ctx)=>Text('${state.counter}'))
     ),
     floatingActionButton: FloatingActionButton
     (
@@ -203,3 +203,6 @@ pubsub.dispose(sub);
 }
 ```
 
+## What's up with the $
+
+Just to avoid accedential conflicts and keep name conventions short.
