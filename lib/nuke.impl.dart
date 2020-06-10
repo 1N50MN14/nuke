@@ -28,18 +28,18 @@ abstract class RX<T>
 
   T get value => _value;
 
+  RX<T> $ref(String ref)
+  {
+    this.ref = ref;
+    return this;
+  }
+
   set onChanged(Function(T, T) onChanged)=> _onChanged = onChanged;
 
   void dispose()
   {
     _instance.disposeRef(ref);
   }
-}
-
-//leaving it on <T> for now, collections/whatever easily mapped manually
-class NukeRx<T> extends RX<T>
-{
-  NukeRx(T value) : super(value);
 }
 
 class SubscriptionKey
@@ -185,30 +185,42 @@ class Nuke extends _NukePubSub
   Nuke._internal();
 }
 
+//leaving it on <T> for now, collections/whatever easily mapped manually
+class NukeRx<T> extends RX<T>
+{
+  NukeRx(T value) : super(value);
+}
+
 extension XrX<T> on T
 {
-  RX<T> get rx => NukeRx<T>(this);
+  RX<T> get $at => NukeRx<T>(this);
 }
 
-extension XrT<T> on RX<T>
+class $ref<T>
 {
-  RX<T> operator |(String ref)
-  {
-    this.ref = ref;
-    return this;
-  }
-}
+  static final Nuke _instance = Nuke();
 
-extension XrV<T> on String
-{
-  RX<T> get get
-  {
-    final Nuke _instance = Nuke();
+  final String ref;
 
-    try {
-      return _instance.getRx(this) as RX<T>;
-    } catch(e) {
-      return null;
+  final RX<T> rx;
+
+  static final Map<String, $ref> _cache = <String, $ref>{};
+
+  factory $ref(String ref)
+  {
+    if(_cache.containsKey(ref))
+    {
+      return _cache[ref] as $ref<T>;
+    } else {
+      final $ref _ref = $ref._internal(ref);
+      _cache[ref] = _ref;
+      return _ref as $ref<T>;
     }
   }
+
+  $ref._internal(this.ref) : rx = _instance.getRx(ref) as RX<T>;
+
+  set value(T value) => rx.value = value;
+
+  T get value => rx.value;
 }
