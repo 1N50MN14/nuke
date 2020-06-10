@@ -1,8 +1,9 @@
 name: nuke
-description: A new Flutter package project.
+description: Super slim state management that gets the job done.
 version: 0.0.1
-author:
-homepage:
+homepage: https://github.com/1N50MN14
+repository: https://github.com/1N50MN14/nuke
+
 
 environment:
   sdk: ">=2.7.0 <3.0.0"
