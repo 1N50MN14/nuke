@@ -19,27 +19,55 @@ class MyApp extends StatelessWidget
   }
 }
 
-
 class MyHomePage extends StatelessWidget
+{
+  final counter = 0.$at.$ref('ref/0');
+
+  MyHomePage({Key key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context)
+  {
+    return Scaffold
+    (
+      body: Center
+      (
+        child: $RX
+        (
+          matchers: const ['ref/:any'],
+          builder: (context) => Text($ref('ref/0').value.toString())
+        )
+      ),
+      floatingActionButton: FloatingActionButton
+      (
+        onPressed: ()=>$ref('ref/0').value++,
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+}
+
+//example2
+class MyHomePage2 extends StatelessWidget
 {
   final counters = {
     'x': 'y',
     'a': {
       'b': {
-        'c': 0.rx|'counter/0',
-        'wtf': [0.rx|'counter/1', 0.rx|'counter/2'],
+        'c': 0.$at.$ref('counter/0'),
+        'wtf': [0.$at.$ref('counter/1'), 0.$at.$ref('counter/2')],
       },
     }
   };
 
   int sum()=>
-    Iterable.generate(3).map((i)=>'counter/$i'.get.value as int)
+    Iterable.generate(3).map((i)=>$ref('counter/$i').value as int)
       .reduce((a,b )=>a+b);
 
   void increment()=>
-    Iterable.generate(3).forEach((i)=>'counter/$i'.get.value++);
+    Iterable.generate(3).forEach((i)=>$ref('counter/$i').value++);
 
-  MyHomePage({Key key}) : super(key: key);
+  MyHomePage2({Key key}) : super(key: key);
 
   @override
   Widget build(BuildContext context)
@@ -51,18 +79,17 @@ class MyHomePage extends StatelessWidget
         child: Wrap(spacing:20, children:
         [
           //Listens to all observables on counter/:any
-          $Rx(const ['counter/:any'], (context) =>Text('${sum()}')),
+          $RX(matchers: const ['counter/:any'], builder: (context) =>Text('${sum()}')),
 
           //Listens only to counter/1
-          $Rx(const ['counter/1'], (context) => Text('${'counter/1'.get.value}')),
+          $RX(matchers: const ['counter/1'], builder: (context) => Text('${$ref('counter/1').value}')),
 
           //Listens only to counter/2
-          $Rx(const ['counter/2'], (context) => Text('${'counter/2'.get.value}')),
+          $RX(matchers: const ['counter/2'], builder:(context) => Text('${$ref('counter/2').value}')),
         ],),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed:increment, child: const Icon(Icons.add), ),
     );
-
   }
 }
