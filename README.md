@@ -18,7 +18,7 @@ import 'package:nuke/nuke.dart';
 
 class MyHomePage extends StatelessWidget
 {
-  final counter = 0.$at.$ref('ref/0'); //<-- more on $ref below
+  final counter = $rx.val(0, ref:'ref/0');
 
   MyHomePage({Key key}) : super(key: key);
 
@@ -31,13 +31,15 @@ class MyHomePage extends StatelessWidget
       (
         child: $RX
         (
-          matchers: const ['ref/0'],
-          builder: (context) => Text($ref('ref/0').value.toString())
+          matchers: const ['ref/:any'],
+          builder: (context) => Text(counter.value.toString())
+          //alternatively $rx.ref('ref/0').value
         )
       ),
       floatingActionButton: FloatingActionButton
       (
-        onPressed: ()=>$ref('ref/0').value++,
+        onPressed: ()=>counter.value++,
+        //alternatively $rx.ref('ref/0').value++
         child: const Icon(Icons.add),
       ),
     );
@@ -52,92 +54,55 @@ Hence the name.
 Let's break it down:
 
 ```dart
-final counter = 0.$at.$ref('ref/0');
+final counter = $rx.val(0, ref:'ref/0');
 ```
 
 - `0` is our initial value
-- `.$at.$ref` syntax sugar, makes the value observalbe, referenced at 'ref/0'
+- `ref` reference the observalbe value at 'ref/0'
 
 
 ```dart
 child: $RX
 (
   matchers: const ['ref/:any'],
-  builder: (context) => Text($ref('ref/0').value.toString())
+  builder: (context) => Text($rx.ref('ref/0').value.toString())
 )
 ```
 
 - `$RX` is the observer widget name
 - `matchers` a list of names / regex scopes the widget should listen to
-- `$ref('ref/0').value` obtain the value by reference
+- `$rx.ref('ref/0').value` obtain the value by reference
 
+`counter.value` also works, the above used for illustation purposed.
 
-```dart
-$ref('ref/0').value++
-```
-
-- Obtain and increment the value by its reference
 
 More on matchers, consider this:
 
 ```dart
-final counter1 = 0.$at.$ref('ref/0');
-final counter2 = 0.$at.$ref('ref/1');
+final counter1 = $rx.val(0, ref:'ref/0');
+final counter2 = $rx.val(0, ref:'ref/1');
 
 @override
 Widget build(BuildContext context)=>
-  $RX(matchers: const ['ref/0'], builder(_)=>Container());
+  $RX(matchers: const ['ref/0', 'ref/1'], builder(_)=>Container());
 ```
 
 The above widget will be rebuilt whenever either `counter1` or `counter2`
 change their values.
 
-
-
-## Counter app ("class"/whatever version)
-
-You can also use Nuke the old fashioned way, using references or the combination
-of both. Rerferences make most sense in deeply nested objects and collections as
-illustrated in the multi counter app example below.
+Alternatively:
 
 ```dart
-import 'package:nuke/nuke.dart';
-
-class StateX
-{
-  final _counter = 0.$at.$ref('ref/0');
-  int get counter => _counter.value;
-  void increment() => _counter.value++;
-}
-
-class MyHomePage extends StatelessWidget
-{
-  final state = StateX();
-
-  MyHomePage({Key key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context)=>Scaffold
-  (
-    appBar: AppBar(),
-    body: Center
-    (
-      child: $RX(const ['counter'], (ctx)=>Text('${state.counter}'))
-    ),
-    floatingActionButton: FloatingActionButton
-    (
-      onPressed:state.incement
-      tooltip: 'Increment',
-      child: const Icon(Icons.add),
-    ),
-  );
-}
+@override
+Widget build(BuildContext context)=>
+  $RX(matchers: const ['ref/:idx'], builder(_)=>Container());
 ```
 
-References allows observers to live outside the widget scope, anywhere in the app,
-and can be access within multiple places around the app!
 
-A practical example would be a "Settings" screen where value X is utilized within
+References are awesome because they allow observers to be defined and acessed
+anywhere within the app.
+
+A practical example would be a "aettings" screen where value X is utilized within
 the underlying widget, saving hassle of passing values between the two separate
 widgets and updating each's local state.
 
@@ -150,18 +115,18 @@ class MyHomePage2 extends StatelessWidget
     'x': 'y',
     'a': {
       'b': {
-        'c': 0.$at.$ref('counter/0'),
-        'wtf': [0.$at.$ref('counter/1'), 0.$at.$ref('counter/2')],
+        'c': $rx.val(0, ref:'counter/0'),
+        'wtf': [$rx.val(0, ref:'counter/1'), $rx.val(0, ref:'counter/2')],
       },
     }
   };
 
   int sum()=>
-    Iterable.generate(3).map((i)=>$ref('counter/$i').value as int)
+    Iterable.generate(3).map((i)=>$rx.ref('counter/$i').value as int)
       .reduce((a,b )=>a+b);
 
   void increment()=>
-    Iterable.generate(3).forEach((i)=>$ref('counter/$i').value++);
+    Iterable.generate(3).forEach((i)=>$rx.ref('counter/$i').value++);
 
   MyHomePage2({Key key}) : super(key: key);
 
@@ -178,10 +143,10 @@ class MyHomePage2 extends StatelessWidget
           $RX(matchers: const ['counter/:any'], builder: (context) =>Text('${sum()}')),
 
           //Listens only to counter/1
-          $RX(matchers: const ['counter/1'], builder: (context) => Text('${$ref('counter/1').value}')),
+          $RX(matchers: const ['counter/1'], builder: (context) => Text('${$rx.ref('counter/1').value}')),
 
           //Listens only to counter/2
-          $RX(matchers: const ['counter/2'], builder:(context) => Text('${$ref('counter/2').value}')),
+          $RX(matchers: const ['counter/2'], builder:(context) => Text('${$rx.ref('counter/2').value}')),
         ],),
       ),
       floatingActionButton: FloatingActionButton(
@@ -191,23 +156,35 @@ class MyHomePage2 extends StatelessWidget
 }
 ```
 
-## Bonus
+## Computed values
+
+```dart
+final counter1 = $rx.val(0, ref:'ref/0');
+final counter2 = $rx.val(0, ref:'ref/1');
+
+final sum = $rx.cmp(['ref/0', 'ref/1'],
+  ()=>$rx.ref('ref/0').value+$rx.ref('ref/1').value, ref:'ref/sum')
+```
+
+## Pub sub
 
 ```dart
 import 'package:nuke/nuke.dart';
 
-final pubsub = Nuke(); //OR Provider.of<Nuke>(context);
+// subscribe to one
+final sub1 = $rx.on('ref/0', (data) => print(data));
 
-final sub = pubsub.subscribe('subId', ['topic/:id'], (event)=>print(event.data));
+// subscribe to multiple
+final sub2 = $rx.subscribe(['ref1/0', 'ref1/2'], 
+  (event)=>print(event.data));
 
-pubsub.publish(NukeEvent('topic/xyz', {'foo':'bar'}));
+//unsubscribe
+$rx.off(sub1);
+$rx.off(sub2) ;
 
-pubsub.pause(sub);
+//publish
+$rx.publish('topic', {'foo':'bar'});
 
-pubsub.resume(sub);
-
-pubsub.dispose(sub);
-}
 ```
 
 ## What's up with the $

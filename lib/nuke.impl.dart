@@ -1,17 +1,21 @@
 import 'dart:async';
+import 'package:meta/meta.dart';
 import 'package:path_to_regexp/path_to_regexp.dart';
+import 'package:uuid/uuid.dart';
 
-abstract class RX<T>
+class RX<T>
 {
+  @required
   T _value;
 
+  @required
   String ref;
 
   Function(T, T) _onChanged;
 
   final Nuke _instance = Nuke();
 
-  RX(T value)
+  RX(T value, {this.ref})
   {
     _value = value;
     _instance.registerRx(this);
@@ -28,17 +32,68 @@ abstract class RX<T>
 
   T get value => _value;
 
-  RX<T> $ref(String ref)
-  {
-    this.ref = ref;
-    return this;
-  }
-
   set onChanged(Function(T, T) onChanged)=> _onChanged = onChanged;
 
   void dispose()
   {
     _instance.disposeRef(ref);
+  }
+}
+
+class RxRef<T>
+{
+  static final Nuke _instance = Nuke();
+
+  final String ref;
+
+  final RX<T> rx;
+
+  static final Map<String, RxRef> _cache = <String, RxRef>{};
+
+  factory RxRef(String ref)
+  {
+    if(_cache.containsKey(ref))
+    {
+      return _cache[ref] as RxRef<T>;
+    } else {
+      final RxRef _ref = RxRef._internal(ref);
+      _cache[ref] = _ref;
+      return _ref as RxRef<T>;
+    }
+  }
+
+  RxRef._internal(this.ref) : rx = _instance.getRx(ref) as RX<T>;
+
+  set value(T value) => rx.value = value;
+
+  T get value => rx.value;
+}
+
+class RxComp<T> extends RX
+{
+  @required Iterable<String> refs;
+
+  final Function fn;
+
+  SubscriptionKey _subKey;
+
+  RxComp(this.refs, this.fn, {String ref}) : super(fn(), ref:ref)
+  {
+    _subKey = _instance.subscribe(refs.join(), refs, (_)
+    {
+      value = fn();
+    });
+
+  }
+
+  @override
+  T get value => fn() as T;
+
+  @override
+  void dispose()
+  {
+    _instance.unsubscribe(_subKey);
+    super.dispose();
   }
 }
 
@@ -148,7 +203,7 @@ class _NukePubSub<T>
     _listeners.keys.forEach((key)=>resume(key));
   }
 
-  void dispose(SubscriptionKey subscriptionKey)
+  void unsubscribe(SubscriptionKey subscriptionKey)
   {
     if(_listeners.containsKey(subscriptionKey))
     {
@@ -162,12 +217,12 @@ class _NukePubSub<T>
     _listeners.keys.where((sKey)=>sKey.regexp
       .where((reg)=>reg.hasMatch(ref)).isNotEmpty)
         .map((sKey)=>sKey).toList()
-          .forEach((sKey)=>dispose(sKey));
+          .forEach((sKey)=>unsubscribe(sKey));
   }
 
-  void disposeAll()
+  void unsubscribeAll()
   {
-    _listeners.keys.forEach((key)=>dispose(key));
+    _listeners.keys.forEach((key)=>unsubscribe(key));
 
     if(!_closed())
     {
@@ -185,42 +240,35 @@ class Nuke extends _NukePubSub
   Nuke._internal();
 }
 
-//leaving it on <T> for now, collections/whatever easily mapped manually
-class NukeRx<T> extends RX<T>
+class $rx
 {
-  NukeRx(T value) : super(value);
-}
+  static final Uuid _uuid = Uuid();
 
-extension XrX<T> on T
-{
-  RX<T> get $at => NukeRx<T>(this);
-}
+  static final Nuke _nuke = Nuke();
 
-class $ref<T>
-{
-  static final Nuke _instance = Nuke();
+  static RX val(Object value, {String ref}) => RX(value, ref:ref);
 
-  final String ref;
+  static RxRef ref(String ref) => RxRef(ref);
 
-  final RX<T> rx;
+  static RxComp cmp(Iterable<String> refs, Function fn, {String ref})=>
+    RxComp(refs, fn, ref:ref);
 
-  static final Map<String, $ref> _cache = <String, $ref>{};
-
-  factory $ref(String ref)
+  static SubscriptionKey on(String ref, Function(Map) fn)
   {
-    if(_cache.containsKey(ref))
+    return _nuke.subscribe(_uuid.v4(), [ref], (event)
     {
-      return _cache[ref] as $ref<T>;
-    } else {
-      final $ref _ref = $ref._internal(ref);
-      _cache[ref] = _ref;
-      return _ref as $ref<T>;
-    }
+      fn(event.data);
+    });
   }
 
-  $ref._internal(this.ref) : rx = _instance.getRx(ref) as RX<T>;
+  static SubscriptionKey subscribe(Iterable<String> match,
+    void Function(NukeEvent event) onData, {String key}) =>
+      _nuke.subscribe(key ?? _uuid.v4(), match, onData);
 
-  set value(T value) => rx.value = value;
+  static void off(SubscriptionKey subscriptionKey) =>
+    _nuke.unsubscribe(subscriptionKey);
 
-  T get value => rx.value;
+  static void publish(String ref, Map data) =>
+    _nuke.publish(NukeEvent(ref, data));
 }
+
