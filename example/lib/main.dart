@@ -27,25 +27,7 @@ class MyHomePage extends StatelessWidget
 
   final simple = $rx(0, ref:'simple/0');
 
-  final subKey = $n.subscribe(['topic'],
-    (topic, data)=>debugPrint(data.toString()),key:'xxx');
-
-  final xx = $n.subscribe(['topic-once'], (topic, data)
-  {
-    debugPrint(data.toString());
-  });
-
   MyHomePage({Key key}) : super(key: key);
-
-  void testPubSub()
-  {
-    //publish
-    [1].forEach((i)
-    {
-      $n.publish('topic', {'num':'topic $i'});
-      $n.publish('topic-once', {'num':'topic-once $i'});
-    });
-  }
 
   @override
   Widget build(BuildContext context)
@@ -62,14 +44,7 @@ class MyHomePage extends StatelessWidget
       ),
       floatingActionButton: FloatingActionButton
       (
-        onPressed: () async
-        {
-          testPubSub();
-          await Future.delayed(const Duration(milliseconds: 500));
-          $n.unsubscribe(xx);
-          simple.value++;
-          //testPubSub();
-        },
+        onPressed: ()=>simple.value++,
         child: const Icon(Icons.add),
       ),
     );
