@@ -80,8 +80,37 @@ class _NukePubSub<T>
     return _listeners[subscriptionKey]?.isPaused;
   }
 
+  void registerRx(RX<T> rx)
+  {
+    if(!_rx.contains(rx))
+    {
+      rx.onChanged = (T newValue, T oldValue)
+      {
+        if(!_closed())
+        {
+          publish(rx.ref, {'newValue':newValue, 'oldValue':oldValue});
+        }
+      };
+
+      _rx.add(rx);
+    }
+  }
+
+  RX<T> getRx(String ref)
+  {
+    return _rx.firstWhere((e) => e.ref == ref);
+  }
+
+  void publish(String ref, Map data)
+  {
+    if(!_closed())
+    {
+      _controller.add(NukeEvent(ref, data));
+    }
+  }
+
   SubscriptionKey subscribe(Iterable<String> match,
-    void Function(NukeEvent event) onData, {String key})
+    void Function(String ref, Map<T,T> data) onData, {String key})
   {
     final subscriptionKey = SubscriptionKey(key ?? _uuid.v4(), match);
 
@@ -90,37 +119,35 @@ class _NukePubSub<T>
       _listeners[subscriptionKey] =_controller.stream
           .where((event)=>subscriptionKey.regexp
             .where((reg)=>reg.hasMatch(event.ref)).isNotEmpty)
-              .listen(onData);
+              .listen((NukeEvent event)=>
+                onData(event.ref, event.data as Map<T,T>));
     }
 
     return subscriptionKey;
   }
 
-  void registerRx(RX<T> rx)
-  {
-    rx.onChanged = (T newValue, T oldValue)
+  void unsubscribe(SubscriptionKey subscriptionKey)
     {
-      publishEvent(NukeEvent(rx.ref, {
-        'newValue':newValue,
-        'oldValue':oldValue
-      }));
-    };
-
-    _rx.add(rx);
-  }
-
-  RX<T> getRx(String ref)
-  {
-    return _rx.firstWhere((e) => e.ref == ref);
-  }
-
-  void publishEvent(NukeEvent event)
-  {
-    if(!_closed())
-    {
-      _controller.add(event);
+      if(_listeners.containsKey(subscriptionKey))
+      {
+        _listeners[subscriptionKey].cancel();
+        _listeners.remove(subscriptionKey);
+      }
     }
+
+
+  void once(Iterable<String> match,
+    void Function(String ref, Map<T,T> data) onData, {String key})
+  {
+    SubscriptionKey subscriptionKey;
+
+    subscriptionKey = subscribe(match, (ref, data)
+    {
+      onData(ref, data);
+      unsubscribe(subscriptionKey);
+    } , key:key);
   }
+
 
   void pause(SubscriptionKey subscriptionKey)
   {
@@ -148,15 +175,6 @@ class _NukePubSub<T>
     _listeners.keys.forEach((key)=>resume(key));
   }
 
-  void unsubscribe(SubscriptionKey subscriptionKey)
-  {
-    if(_listeners.containsKey(subscriptionKey))
-    {
-      _listeners[subscriptionKey].cancel();
-      _listeners.remove(subscriptionKey);
-    }
-  }
-
   void disposeRef(String ref)
   {
     _listeners.keys.where((sKey)=>sKey.regexp
@@ -174,20 +192,6 @@ class _NukePubSub<T>
       _controller?.close();
     }
   }
-
-   SubscriptionKey on(String ref, Function(Map) fn)
-  {
-    return subscribe([ref], (event)
-    {
-      fn(event.data);
-    });
-  }
-
-  void off(SubscriptionKey subscriptionKey) =>
-    unsubscribe(subscriptionKey);
-
-  void publish(String ref, Map data) =>
-    publishEvent(NukeEvent(ref, data));
 }
 
 class Nuke extends _NukePubSub
@@ -243,7 +247,7 @@ class $cmp<T> extends RX<T>
 
   $cmp(this.refs, this.fn, {String ref}) : super(fn() as T, ref:ref)
   {
-    _subKey = _instance.subscribe(refs, (_)=>value=fn() as T);
+    _subKey = _instance.subscribe(refs, (_ref, _data)=>value=fn() as T);
   }
 
   @override
