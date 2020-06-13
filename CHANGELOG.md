@@ -1,7 +1,7 @@
 ## [0.0.3]
 
 * Update syntax
-- Support computed values
+* Support computed values
 
 ## [0.0.2]
 
