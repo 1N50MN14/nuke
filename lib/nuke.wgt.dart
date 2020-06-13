@@ -15,19 +15,18 @@ class $RX extends StatefulWidget
 
 class _NukeWidgetState extends State<$RX>
 {
-  SubscriptionKey subscriptionKey;
-
   final _instance = Nuke();
+
+  SubscriptionKey subscriptionKey;
 
   @override
   void initState()
   {
     super.initState();
 
-    subscriptionKey = _instance.subscribe(
-      widget.matchers ?? [],
+    subscriptionKey = _instance.subscribe(widget.matchers ?? [],
       (_ref, _data) => setState(() {}),
-      key:widget.key.toString()
+      key:widget.hashCode.toString()
     );
   }
 

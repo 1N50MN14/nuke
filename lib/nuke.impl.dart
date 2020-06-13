@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:meta/meta.dart';
 import 'package:path_to_regexp/path_to_regexp.dart';
 import 'package:uuid/uuid.dart';
+import 'package:equatable/equatable.dart';
 
 class RX<T>
 {
@@ -40,7 +41,7 @@ class RX<T>
   }
 }
 
-class SubscriptionKey
+class SubscriptionKey extends Equatable
 {
   final String key;
 
@@ -48,6 +49,13 @@ class SubscriptionKey
 
   SubscriptionKey(this.key, Iterable<String> match) :
     regexp = match.map((r)=>pathToRegExp(r));
+
+
+  @override
+  List<Object> get props => [key, regexp.toString()];
+
+  @override
+  bool get stringify => true;
 }
 
 class NukeEvent<T>
@@ -82,18 +90,15 @@ class _NukePubSub<T>
 
   void registerRx(RX<T> rx)
   {
-    if(!_rx.contains(rx))
+    rx.onChanged = (T newValue, T oldValue)
     {
-      rx.onChanged = (T newValue, T oldValue)
+      if(!_closed())
       {
-        if(!_closed())
-        {
-          publish(rx.ref, {'newValue':newValue, 'oldValue':oldValue});
-        }
-      };
+        publish(rx.ref, {'newValue':newValue, 'oldValue':oldValue});
+      }
+    };
 
-      _rx.add(rx);
-    }
+    _rx.add(rx);
   }
 
   RX<T> getRx(String ref)
@@ -127,33 +132,33 @@ class _NukePubSub<T>
   }
 
   void unsubscribe(SubscriptionKey subscriptionKey)
-    {
-      if(_listeners.containsKey(subscriptionKey))
-      {
-        _listeners[subscriptionKey].cancel();
-        _listeners.remove(subscriptionKey);
-      }
-    }
-
-
-  void once(Iterable<String> match,
-    void Function(String ref, Map<T,T> data) onData, {String key})
   {
-    SubscriptionKey subscriptionKey;
+    if(_listeners.containsKey(subscriptionKey))
+    {
+      _listeners[subscriptionKey]?.cancel();
+      _listeners.remove(subscriptionKey);
+    }
+  }
 
-    subscriptionKey = subscribe(match, (ref, data)
+  /*void once(Iterable<String> match,
+    void Function(String ref, Map<T,T> data) onData)
+  {
+    final String key = _uuid.v4();
+
+    subscribe(match, (ref, data)
     {
       onData(ref, data);
-      unsubscribe(subscriptionKey);
+      final subKey = _listeners.keys.firstWhere((sKey) => sKey.key == key, orElse: ()=>null);
+      if(subKey != null) unsubscribe(subKey);
     } , key:key);
-  }
+  }*/
 
 
   void pause(SubscriptionKey subscriptionKey)
   {
     if(!_paused(subscriptionKey))
     {
-      _listeners[subscriptionKey].pause();
+      _listeners[subscriptionKey]?.pause();
     }
   }
 
@@ -161,7 +166,7 @@ class _NukePubSub<T>
   {
     if(_paused(subscriptionKey))
     {
-      _listeners[subscriptionKey].resume();
+      _listeners[subscriptionKey]?.resume();
     }
   }
 
