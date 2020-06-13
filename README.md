@@ -173,20 +173,17 @@ import 'package:nuke/nuke.dart';
 
 final $n = Nuke();
 
-// subscribe to one
-final sub1 = $n.on('ref/0', (data) => print(data));
+//subscribe
+final subKey = $n.subscribe(['topic'], (topic, data)=>print(data));
 
-// subscribe to multiple
-final sub2 = $n.subscribe(['ref1/0', 'ref1/2'],
-  (event)=>print(event.data));
-
-//unsubscribe
-$n.off(sub1);
-$n.off(sub2) ;
+//subscribe and unsubscribe once data is received
+final subKey2 = $n.once(['topic'], (topic, data)=>print(data));
 
 //publish
-$n.publish('topic', {'foo':'bar'});
+$n.publish('topic', {'foo':1})
 
+//unsubscribe
+$n.unsubscribe(subKey)
 ```
 
 ## What's up with the $
