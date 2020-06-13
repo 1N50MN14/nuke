@@ -1,15 +1,12 @@
 import 'dart:async';
-import 'package:meta/meta.dart';
 import 'package:path_to_regexp/path_to_regexp.dart';
 import 'package:uuid/uuid.dart';
 import 'package:equatable/equatable.dart';
 
 class RX<T>
 {
-  @required
   T _value;
 
-  @required
   String ref;
 
   Function(T, T) _onChanged;
@@ -244,7 +241,7 @@ class $ref<T>
 
 class $cmp<T> extends RX<T>
 {
-  @required Iterable<String> refs;
+  Iterable<String> refs;
 
   final Function fn;
 
