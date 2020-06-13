@@ -176,14 +176,11 @@ final $n = Nuke();
 //subscribe
 final subKey = $n.subscribe(['topic'], (topic, data)=>print(data));
 
-//subscribe and unsubscribe once data is received
-final subKey2 = $n.once(['topic'], (topic, data)=>print(data));
-
 //publish
-$n.publish('topic', {'foo':1})
+$n.publish('topic', {'foo':1});
 
 //unsubscribe
-$n.unsubscribe(subKey)
+$n.unsubscribe(subKey);
 ```
 
 ## What's up with the $
