@@ -26,7 +26,7 @@ class _NukeWidgetState extends State<$RX>
 
     subscriptionKey = _instance.subscribe(
       widget.matchers ?? [],
-      (event) => setState(() {}),
+      (_ref, _data) => setState(() {}),
       key:widget.key.toString()
     );
   }
@@ -40,7 +40,7 @@ class _NukeWidgetState extends State<$RX>
   @override
   void dispose()
   {
-    _instance.off(subscriptionKey);
+    _instance.unsubscribe(subscriptionKey);
     super.dispose();
   }
 }
