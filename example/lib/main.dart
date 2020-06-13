@@ -3,6 +3,8 @@ import 'package:nuke/nuke.dart';
 
 void main()=>runApp(MyApp());
 
+final $n = Nuke();
+
 class MyApp extends StatelessWidget
 {
   // This widget is the root of your application.
@@ -22,9 +24,28 @@ class MyApp extends StatelessWidget
 
 class MyHomePage extends StatelessWidget
 {
-  final counter = $rx(0, ref:'ref/0');
+
+  final simple = $rx(0, ref:'simple/0');
+
+  final subKey = $n.subscribe(['topic'],
+    (topic, data)=>debugPrint(data.toString()),key:'xxx');
+
+  final xx = $n.subscribe(['topic-once'], (topic, data)
+  {
+    debugPrint(data.toString());
+  });
 
   MyHomePage({Key key}) : super(key: key);
+
+  void testPubSub()
+  {
+    //publish
+    [1].forEach((i)
+    {
+      $n.publish('topic', {'num':'topic $i'});
+      $n.publish('topic-once', {'num':'topic-once $i'});
+    });
+  }
 
   @override
   Widget build(BuildContext context)
@@ -35,13 +56,20 @@ class MyHomePage extends StatelessWidget
       (
         child: $RX
         (
-          matchers: const ['ref/:any'],
-          builder: (context) => Text($ref('ref/0').value.toString())
+          matchers: const ['simple/0'],
+          builder: (context) => Text($ref('simple/0').value.toString())
         )
       ),
       floatingActionButton: FloatingActionButton
       (
-        onPressed: ()=>counter.value++,
+        onPressed: () async
+        {
+          testPubSub();
+          await Future.delayed(const Duration(milliseconds: 500));
+          $n.unsubscribe(xx);
+          simple.value++;
+          //testPubSub();
+        },
         child: const Icon(Icons.add),
       ),
     );
