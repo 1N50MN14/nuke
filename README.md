@@ -18,7 +18,7 @@ import 'package:nuke/nuke.dart';
 
 class MyHomePage extends StatelessWidget
 {
-  final counter = $rx.val(0, ref:'ref/0');
+  final counter = $rx(0, ref:'ref/0');
 
   MyHomePage({Key key}) : super(key: key);
 
@@ -33,13 +33,13 @@ class MyHomePage extends StatelessWidget
         (
           matchers: const ['ref/:any'],
           builder: (context) => Text(counter.value.toString())
-          //alternatively $rx.ref('ref/0').value
+          //alternatively $ref('ref/0').value
         )
       ),
       floatingActionButton: FloatingActionButton
       (
         onPressed: ()=>counter.value++,
-        //alternatively $rx.ref('ref/0').value++
+        //alternatively $ref('ref/0').value++
         child: const Icon(Icons.add),
       ),
     );
@@ -54,7 +54,7 @@ Hence the name.
 Let's break it down:
 
 ```dart
-final counter = $rx.val(0, ref:'ref/0');
+final counter = $rx(0, ref:'ref/0');
 ```
 
 - `0` is our initial value
@@ -65,13 +65,13 @@ final counter = $rx.val(0, ref:'ref/0');
 child: $RX
 (
   matchers: const ['ref/:any'],
-  builder: (context) => Text($rx.ref('ref/0').value.toString())
+  builder: (context) => Text($ref('ref/0').value.toString())
 )
 ```
 
 - `$RX` is the observer widget name
 - `matchers` a list of names / regex scopes the widget should listen to
-- `$rx.ref('ref/0').value` obtain the value by reference
+- `$ref('ref/0').value` obtain the value by reference
 
 `counter.value` also works, the above used for illustation purposed.
 
@@ -79,8 +79,8 @@ child: $RX
 More on matchers, consider this:
 
 ```dart
-final counter1 = $rx.val(0, ref:'ref/0');
-final counter2 = $rx.val(0, ref:'ref/1');
+final counter1 = $rx(0, ref:'ref/0');
+final counter2 = $rx(0, ref:'ref/1');
 
 @override
 Widget build(BuildContext context)=>
@@ -115,18 +115,18 @@ class MyHomePage2 extends StatelessWidget
     'x': 'y',
     'a': {
       'b': {
-        'c': $rx.val(0, ref:'counter/0'),
-        'wtf': [$rx.val(0, ref:'counter/1'), $rx.val(0, ref:'counter/2')],
+        'c': $rx(0, ref:'counter/0'),
+        'wtf': [$rx(0, ref:'counter/1'), $rx(0, ref:'counter/2')],
       },
     }
   };
 
   int sum()=>
-    Iterable.generate(3).map((i)=>$rx.ref('counter/$i').value as int)
+    Iterable.generate(3).map((i)=>$ref('counter/$i').value as int)
       .reduce((a,b )=>a+b);
 
   void increment()=>
-    Iterable.generate(3).forEach((i)=>$rx.ref('counter/$i').value++);
+    Iterable.generate(3).forEach((i)=>$ref('counter/$i').value++);
 
   MyHomePage2({Key key}) : super(key: key);
 
@@ -143,10 +143,10 @@ class MyHomePage2 extends StatelessWidget
           $RX(matchers: const ['counter/:any'], builder: (context) =>Text('${sum()}')),
 
           //Listens only to counter/1
-          $RX(matchers: const ['counter/1'], builder: (context) => Text('${$rx.ref('counter/1').value}')),
+          $RX(matchers: const ['counter/1'], builder: (context) => Text('${$ref('counter/1').value}')),
 
           //Listens only to counter/2
-          $RX(matchers: const ['counter/2'], builder:(context) => Text('${$rx.ref('counter/2').value}')),
+          $RX(matchers: const ['counter/2'], builder:(context) => Text('${$ref('counter/2').value}')),
         ],),
       ),
       floatingActionButton: FloatingActionButton(
@@ -159,11 +159,11 @@ class MyHomePage2 extends StatelessWidget
 ## Computed values
 
 ```dart
-final counter1 = $rx.val(0, ref:'ref/0');
-final counter2 = $rx.val(0, ref:'ref/1');
+final counter1 = $rx(0, ref:'ref/0');
+final counter2 = $rx(0, ref:'ref/1');
 
-final sum = $rx.cmp(['ref/0', 'ref/1'],
-  ()=>$rx.ref('ref/0').value+$rx.ref('ref/1').value, ref:'ref/sum')
+final sum = $cmp(['ref/0', 'ref/1'],
+  ()=>$ref('ref/0').value+$ref('ref/1').value, ref:'ref/sum')
 ```
 
 ## Pub sub
@@ -171,19 +171,21 @@ final sum = $rx.cmp(['ref/0', 'ref/1'],
 ```dart
 import 'package:nuke/nuke.dart';
 
+final $n = Nuke();
+
 // subscribe to one
-final sub1 = $rx.on('ref/0', (data) => print(data));
+final sub1 = $n.on('ref/0', (data) => print(data));
 
 // subscribe to multiple
-final sub2 = $rx.subscribe(['ref1/0', 'ref1/2'], 
+final sub2 = $n.subscribe(['ref1/0', 'ref1/2'],
   (event)=>print(event.data));
 
 //unsubscribe
-$rx.off(sub1);
-$rx.off(sub2) ;
+$n.off(sub1);
+$n.off(sub2) ;
 
 //publish
-$rx.publish('topic', {'foo':'bar'});
+$n.publish('topic', {'foo':'bar'});
 
 ```
 

@@ -17,12 +17,14 @@ class _NukeWidgetState extends State<$RX>
 {
   SubscriptionKey subscriptionKey;
 
+  final _instance = Nuke();
+
   @override
   void initState()
   {
     super.initState();
 
-    subscriptionKey = $rx.subscribe(
+    subscriptionKey = _instance.subscribe(
       widget.matchers ?? [],
       (event) => setState(() {}),
       key:widget.key.toString()
@@ -38,7 +40,7 @@ class _NukeWidgetState extends State<$RX>
   @override
   void dispose()
   {
-    $rx.off(subscriptionKey);
+    _instance.off(subscriptionKey);
     super.dispose();
   }
 }

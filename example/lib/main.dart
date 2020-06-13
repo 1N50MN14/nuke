@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget
 
 class MyHomePage extends StatelessWidget
 {
-  final counter = $rx.val(0, ref:'ref/0');
+  final counter = $rx(0, ref:'ref/0');
 
   MyHomePage({Key key}) : super(key: key);
 
@@ -36,7 +36,7 @@ class MyHomePage extends StatelessWidget
         child: $RX
         (
           matchers: const ['ref/:any'],
-          builder: (context) => Text($rx.ref('ref/0').value.toString())
+          builder: (context) => Text($ref('ref/0').value.toString())
         )
       ),
       floatingActionButton: FloatingActionButton

@@ -40,63 +40,6 @@ class RX<T>
   }
 }
 
-class RxRef<T>
-{
-  static final Nuke _instance = Nuke();
-
-  final String ref;
-
-  final RX<T> rx;
-
-  static final Map<String, RxRef> _cache = <String, RxRef>{};
-
-  factory RxRef(String ref)
-  {
-    if(_cache.containsKey(ref))
-    {
-      return _cache[ref] as RxRef<T>;
-    } else {
-      final RxRef _ref = RxRef._internal(ref);
-      _cache[ref] = _ref;
-      return _ref as RxRef<T>;
-    }
-  }
-
-  RxRef._internal(this.ref) : rx = _instance.getRx(ref) as RX<T>;
-
-  set value(T value) => rx.value = value;
-
-  T get value => rx.value;
-}
-
-class RxComp<T> extends RX
-{
-  @required Iterable<String> refs;
-
-  final Function fn;
-
-  SubscriptionKey _subKey;
-
-  RxComp(this.refs, this.fn, {String ref}) : super(fn(), ref:ref)
-  {
-    _subKey = _instance.subscribe(refs.join(), refs, (_)
-    {
-      value = fn();
-    });
-
-  }
-
-  @override
-  T get value => fn() as T;
-
-  @override
-  void dispose()
-  {
-    _instance.unsubscribe(_subKey);
-    super.dispose();
-  }
-}
-
 class SubscriptionKey
 {
   final String key;
@@ -118,6 +61,8 @@ class NukeEvent<T>
 
 class _NukePubSub<T>
 {
+  final Uuid _uuid = Uuid();
+
   final StreamController<NukeEvent> _controller =
     StreamController<NukeEvent>.broadcast();
 
@@ -135,10 +80,10 @@ class _NukePubSub<T>
     return _listeners[subscriptionKey]?.isPaused;
   }
 
-  SubscriptionKey subscribe(String key, Iterable<String> match,
-    void Function(NukeEvent event) onData)
+  SubscriptionKey subscribe(Iterable<String> match,
+    void Function(NukeEvent event) onData, {String key})
   {
-    final subscriptionKey = SubscriptionKey(key, match);
+    final subscriptionKey = SubscriptionKey(key ?? _uuid.v4(), match);
 
     if(!_listeners.containsKey(subscriptionKey))
     {
@@ -155,7 +100,7 @@ class _NukePubSub<T>
   {
     rx.onChanged = (T newValue, T oldValue)
     {
-      publish(NukeEvent(rx.ref, {
+      publishEvent(NukeEvent(rx.ref, {
         'newValue':newValue,
         'oldValue':oldValue
       }));
@@ -169,7 +114,7 @@ class _NukePubSub<T>
     return _rx.firstWhere((e) => e.ref == ref);
   }
 
-  void publish(NukeEvent event)
+  void publishEvent(NukeEvent event)
   {
     if(!_closed())
     {
@@ -229,6 +174,20 @@ class _NukePubSub<T>
       _controller?.close();
     }
   }
+
+   SubscriptionKey on(String ref, Function(Map) fn)
+  {
+    return subscribe([ref], (event)
+    {
+      fn(event.data);
+    });
+  }
+
+  void off(SubscriptionKey subscriptionKey) =>
+    unsubscribe(subscriptionKey);
+
+  void publish(String ref, Map data) =>
+    publishEvent(NukeEvent(ref, data));
 }
 
 class Nuke extends _NukePubSub
@@ -240,35 +199,61 @@ class Nuke extends _NukePubSub
   Nuke._internal();
 }
 
-class $rx
+class $rx<T> extends RX<T>
 {
-  static final Uuid _uuid = Uuid();
+  $rx(T val, {String ref}) : super(val, ref:ref);
+}
 
-  static final Nuke _nuke = Nuke();
+class $ref<T>
+{
+  static final Nuke _instance = Nuke();
 
-  static RX val(Object value, {String ref}) => RX(value, ref:ref);
+  final String ref;
 
-  static RxRef ref(String ref) => RxRef(ref);
+  final RX<T> rx;
 
-  static RxComp cmp(Iterable<String> refs, Function fn, {String ref})=>
-    RxComp(refs, fn, ref:ref);
+  static final Map<String, $ref> _cache = <String, $ref>{};
 
-  static SubscriptionKey on(String ref, Function(Map) fn)
+  factory $ref(String ref)
   {
-    return _nuke.subscribe(_uuid.v4(), [ref], (event)
+    if(_cache.containsKey(ref))
     {
-      fn(event.data);
-    });
+      return _cache[ref] as $ref<T>;
+    } else {
+      final $ref _ref = $ref._internal(ref);
+      _cache[ref] = _ref;
+      return _ref as $ref<T>;
+    }
   }
 
-  static SubscriptionKey subscribe(Iterable<String> match,
-    void Function(NukeEvent event) onData, {String key}) =>
-      _nuke.subscribe(key ?? _uuid.v4(), match, onData);
+  $ref._internal(this.ref) : rx = _instance.getRx(ref) as RX<T>;
 
-  static void off(SubscriptionKey subscriptionKey) =>
-    _nuke.unsubscribe(subscriptionKey);
+  set value(T value) => rx.value = value;
 
-  static void publish(String ref, Map data) =>
-    _nuke.publish(NukeEvent(ref, data));
+  T get value => rx.value;
+}
+
+class $cmp<T> extends RX<T>
+{
+  @required Iterable<String> refs;
+
+  final Function fn;
+
+  SubscriptionKey _subKey;
+
+  $cmp(this.refs, this.fn, {String ref}) : super(fn() as T, ref:ref)
+  {
+    _subKey = _instance.subscribe(refs, (_)=>value=fn() as T);
+  }
+
+  @override
+  T get value => fn() as T;
+
+  @override
+  void dispose()
+  {
+    _instance.unsubscribe(_subKey);
+    super.dispose();
+  }
 }
 
