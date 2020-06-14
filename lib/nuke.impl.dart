@@ -200,11 +200,9 @@ class $rx<T> extends RX<T>
   factory $rx(T val, {String ref})
   {
     if(_cache.containsKey(ref))
-    {
-      print('rx cached');
+    {      
       return _cache[ref] as $rx<T>;
     } else {
-      print('rx not cached');
       final $rx<T> _rx = $rx._internal(val, ref:ref);
       _cache[ref] = _rx;
       return _rx;
