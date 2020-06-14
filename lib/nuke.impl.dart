@@ -137,19 +137,6 @@ class _NukePubSub<T>
     }
   }
 
-  /*void once(Iterable<String> match,
-    void Function(String ref, Map<T,T> data) onData)
-  {
-    final String key = _uuid.v4();
-
-    subscribe(match, (ref, data)
-    {
-      onData(ref, data);
-      final subKey = _listeners.keys.firstWhere((sKey) => sKey.key == key, orElse: ()=>null);
-      if(subKey != null) unsubscribe(subKey);
-    } , key:key);
-  }*/
-
 
   void pause(SubscriptionKey subscriptionKey)
   {
@@ -207,7 +194,24 @@ class Nuke extends _NukePubSub
 
 class $rx<T> extends RX<T>
 {
-  $rx(T val, {String ref}) : super(val, ref:ref);
+  //$rx(T val, {String ref}) : super(val, ref:ref);
+  static final Map<String, $rx> _cache = <String, $rx>{};
+
+  factory $rx(T val, {String ref})
+  {
+    if(_cache.containsKey(ref))
+    {
+      print('rx cached');
+      return _cache[ref] as $rx<T>;
+    } else {
+      print('rx not cached');
+      final $rx<T> _rx = $rx._internal(val, ref:ref);
+      _cache[ref] = _rx;
+      return _rx;
+    }
+  }
+
+  $rx._internal(T val, {String ref}) : super(val, ref:ref);
 }
 
 class $ref<T>
