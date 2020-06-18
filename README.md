@@ -29,17 +29,14 @@ class MyHomePage extends StatelessWidget
     (
       body: Center
       (
-        child: $RX
-        (
-          matchers: const ['ref/:any'],
-          builder: (context) => Text(counter.value.toString())
-          //alternatively $ref('ref/0').value
-        )
+        child: RX(const ['ref/:any'], (context) =>
+          Text(counter.value.toString()))
+          //alternatively $rx.$ref('ref/0').value
       ),
       floatingActionButton: FloatingActionButton
       (
         onPressed: ()=>counter.value++,
-        //alternatively $ref('ref/0').value++
+        //alternatively $rx.$ref('ref/0').value++
         child: const Icon(Icons.add),
       ),
     );
@@ -62,16 +59,14 @@ final counter = $rx(0, ref:'ref/0');
 
 
 ```dart
-child: $RX
-(
-  matchers: const ['ref/:any'],
-  builder: (context) => Text($ref('ref/0').value.toString())
-)
+//intentionally not named (aka matchers:[], builder:(context)) to keep it short
+child: RX(const ['ref/:any'], (context) =>
+  Text($rx.$ref('ref/0').value.toString()))
 ```
 
-- `$RX` is the observer widget name
-- `matchers` a list of names / regex scopes the widget should listen to
-- `$ref('ref/0').value` obtain the value by reference
+- the observer widget name
+- a list of names / regex scopes the widget should listen to
+- `$rx.$ref('ref/0').value` obtain the value by reference
 
 `counter.value` also works, the above used for illustation purposed.
 
@@ -84,7 +79,7 @@ final counter2 = $rx(0, ref:'ref/1');
 
 @override
 Widget build(BuildContext context)=>
-  $RX(matchers: const ['ref/0', 'ref/1'], builder(_)=>Container());
+  RX(const ['ref/0', 'ref/1'], (context)=>Container());
 ```
 
 The above widget will be rebuilt whenever either `counter1` or `counter2`
@@ -95,7 +90,7 @@ Alternatively:
 ```dart
 @override
 Widget build(BuildContext context)=>
-  $RX(matchers: const ['ref/:idx'], builder(_)=>Container());
+  RX(const ['ref/:idx'], (context)=>Container());
 ```
 
 
@@ -122,11 +117,11 @@ class MyHomePage2 extends StatelessWidget
   };
 
   int sum()=>
-    Iterable.generate(3).map((i)=>$ref('counter/$i').value as int)
+    Iterable.generate(3).map((i)=>$rx.$ref('counter/$i').value as int)
       .reduce((a,b )=>a+b);
 
   void increment()=>
-    Iterable.generate(3).forEach((i)=>$ref('counter/$i').value++);
+    Iterable.generate(3).forEach((i)=>$rx.$ref('counter/$i').value++);
 
   MyHomePage2({Key key}) : super(key: key);
 
@@ -140,13 +135,13 @@ class MyHomePage2 extends StatelessWidget
         child: Wrap(spacing:20, children:
         [
           //Listens to all observables on counter/:any
-          $RX(matchers: const ['counter/:any'], builder: (context) =>Text('${sum()}')),
+          RX(const ['counter/:any'],(context) =>Text('${sum()}')),
 
           //Listens only to counter/1
-          $RX(matchers: const ['counter/1'], builder: (context) => Text('${$ref('counter/1').value}')),
+          RX(const ['counter/1'], (context) => Text('${$rx.$ref('counter/1').value}')),
 
           //Listens only to counter/2
-          $RX(matchers: const ['counter/2'], builder:(context) => Text('${$ref('counter/2').value}')),
+          RX(['counter/2'], (context) => Text('${$rx.$ref('counter/2').value}')),
         ],),
       ),
       floatingActionButton: FloatingActionButton(
@@ -163,8 +158,13 @@ final counter1 = $rx(0, ref:'ref/0');
 final counter2 = $rx(0, ref:'ref/1');
 
 final sum = $cmp(['ref/0', 'ref/1'],
-  ()=>$ref('ref/0').value+$ref('ref/1').value, ref:'ref/sum')
+  ()=>$rx.$ref('ref/0').value+$rx.$ref('ref/1').value, ref:'ref/sum')
 ```
+
+## Clean up
+
+$RX automatically cleans up  observable subscriptions, however, to dispose
+observables that are no longer in use, call `nuke.dispose([ref])`.
 
 ## Pub sub
 
