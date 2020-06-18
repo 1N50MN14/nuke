@@ -32,9 +32,9 @@ class RX<T>
 
   set onChanged(Function(T, T) onChanged)=> _onChanged = onChanged;
 
-  void dispose()
+  void disposeSubs()
   {
-    _instance.disposeRef(ref);
+    _instance.disposeRefSubscribers(ref);
   }
 }
 
@@ -164,12 +164,20 @@ class _NukePubSub<T>
     _listeners.keys.forEach((key)=>resume(key));
   }
 
-  void disposeRef(String ref)
+  void disposeRefSubscribers(String ref)
   {
     _listeners.keys.where((sKey)=>sKey.regexp
       .where((reg)=>reg.hasMatch(ref)).isNotEmpty)
         .map((sKey)=>sKey).toList()
           .forEach((sKey)=>unsubscribe(sKey));
+  }
+
+  void dispose(Iterable<String> refs)
+  {
+    refs.forEach((ref)
+    {
+      $rx.disposeByRef(ref);
+    });
   }
 
   void unsubscribeAll()
@@ -197,10 +205,20 @@ class $rx<T> extends RX<T>
   //$rx(T val, {String ref}) : super(val, ref:ref);
   static final Map<String, $rx> _cache = <String, $rx>{};
 
+  static void disposeByRef(String ref)
+  {
+    _cache.remove(ref);
+  }
+
+  static $rx $ref(String ref)
+  {
+    return _cache[ref];
+  }
+
   factory $rx(T val, {String ref})
   {
     if(_cache.containsKey(ref))
-    {      
+    {
       return _cache[ref] as $rx<T>;
     } else {
       final $rx<T> _rx = $rx._internal(val, ref:ref);
@@ -210,35 +228,6 @@ class $rx<T> extends RX<T>
   }
 
   $rx._internal(T val, {String ref}) : super(val, ref:ref);
-}
-
-class $ref<T>
-{
-  static final Nuke _instance = Nuke();
-
-  final String ref;
-
-  final RX<T> rx;
-
-  static final Map<String, $ref> _cache = <String, $ref>{};
-
-  factory $ref(String ref)
-  {
-    if(_cache.containsKey(ref))
-    {
-      return _cache[ref] as $ref<T>;
-    } else {
-      final $ref _ref = $ref._internal(ref);
-      _cache[ref] = _ref;
-      return _ref as $ref<T>;
-    }
-  }
-
-  $ref._internal(this.ref) : rx = _instance.getRx(ref) as RX<T>;
-
-  set value(T value) => rx.value = value;
-
-  T get value => rx.value;
 }
 
 class $cmp<T> extends RX<T>
@@ -257,11 +246,9 @@ class $cmp<T> extends RX<T>
   @override
   T get value => fn() as T;
 
-  @override
   void dispose()
   {
     _instance.unsubscribe(_subKey);
-    super.dispose();
   }
 }
 
