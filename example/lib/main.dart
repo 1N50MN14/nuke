@@ -36,11 +36,8 @@ class MyHomePage extends StatelessWidget
     (
       body: Center
       (
-        child: $RX
-        (
-          matchers: const ['simple/0'],
-          builder: (context) => Text($ref('simple/0').value.toString())
-        )
+        child: RX(const ['simple/0'],(context)=>
+          Text($rx.$ref('simple/0').value.toString()))
       ),
       floatingActionButton: FloatingActionButton
       (
