@@ -24,11 +24,15 @@ class _NukeWidgetState extends State<RX>
   {
     super.initState();
 
+    final _matchers = widget.matchers.where((m) =>m!=null);
 
-    subscriptionKey = _instance.subscribe(widget.matchers ?? [],
-      (_ref, _data) => setState(() {}),
-      key:widget.hashCode.toString()
-    );
+    if(_matchers.isNotEmpty)
+    {
+      subscriptionKey = _instance.subscribe(widget.matchers.where((m) =>m!=null),
+        (_ref, _data) => setState(() {}),
+        key:widget.hashCode.toString()
+      );
+    }
   }
 
   @override
@@ -40,7 +44,10 @@ class _NukeWidgetState extends State<RX>
   @override
   void dispose()
   {
-    _instance.unsubscribe(subscriptionKey);
+    if(subscriptionKey != null)
+    {
+      _instance.unsubscribe(subscriptionKey);
+    }
     super.dispose();
   }
 }
