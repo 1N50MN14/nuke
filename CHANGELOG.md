@@ -1,3 +1,6 @@
+## [0.0.5]
+* Guard against accidental `null` RX matchers
+
 ## [0.0.4]
 
 * $RX is now RX
