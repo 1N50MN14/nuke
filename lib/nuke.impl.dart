@@ -210,11 +210,6 @@ class $rx<T> extends RX<T>
     _cache.remove(ref);
   }
 
-  static $rx $ref(String ref)
-  {
-    return _cache[ref];
-  }
-
   factory $rx(T val, {String ref})
   {
     if(_cache.containsKey(ref))
@@ -225,6 +220,11 @@ class $rx<T> extends RX<T>
       _cache[ref] = _rx;
       return _rx;
     }
+  }
+
+  factory $rx.$ref(String ref)
+  {
+    return _cache[ref] as $rx<T>;
   }
 
   $rx._internal(T val, {String ref}) : super(val, ref:ref);
