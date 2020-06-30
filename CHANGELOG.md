@@ -1,3 +1,6 @@
+## [0.0.6]
+* $rx.$ref as factory instead of static method
+
 ## [0.0.5]
 * Guard against accidental `null` RX matchers
 
