@@ -9,11 +9,13 @@ class RX<T>
 
   String ref;
 
+  List<String> tags = [];
+
   Function(T, T) _onChanged;
 
   final Nuke _instance = Nuke();
 
-  RX(T value, {this.ref})
+  RX(T value, {this.ref, this.tags})
   {
     _value = value;
     _instance.registerRx(this);
@@ -42,7 +44,7 @@ class SubscriptionKey extends Equatable
 {
   final String key;
 
-  final Iterable<RegExp > regexp;
+  final Iterable<RegExp> regexp;
 
   SubscriptionKey(this.key, Iterable<String> match) :
     regexp = match.map((r)=>pathToRegExp(r));
@@ -176,8 +178,30 @@ class _NukePubSub<T>
   {
     refs.forEach((ref)
     {
-      $rx.disposeByRef(ref);
+      $rx.dispose(ref);
+      disposeRefSubscribers(ref);
     });
+  }
+
+  void disposeTagged(List tags, {bool matchAny = false})
+  {
+
+    final Set _tags = Set.from(tags);
+
+    dispose(_rx.where((el)
+    {
+      if(el.tags == null)
+      {
+        return false;
+      } else {
+
+        final len = _tags.intersection(Set.from(el.tags)).length;
+
+        final bool match = matchAny ? len>0 : len > tags.length;
+
+        return match;
+      }
+    }).map((e) => e.ref).toList());
   }
 
   void unsubscribeAll()
@@ -205,18 +229,18 @@ class $rx<T> extends RX<T>
   //$rx(T val, {String ref}) : super(val, ref:ref);
   static final Map<String, $rx> _cache = <String, $rx>{};
 
-  static void disposeByRef(String ref)
+  static void dispose(String ref)
   {
     _cache.remove(ref);
   }
 
-  factory $rx(T val, {String ref})
+  factory $rx(T val, {String ref, List<String> tags})
   {
     if(_cache.containsKey(ref))
     {
       return _cache[ref] as $rx<T>;
     } else {
-      final $rx<T> _rx = $rx._internal(val, ref:ref);
+      final $rx<T> _rx = $rx._internal(val, ref:ref, tags:tags);
       _cache[ref] = _rx;
       return _rx;
     }
@@ -227,7 +251,7 @@ class $rx<T> extends RX<T>
     return _cache[ref] as $rx<T>;
   }
 
-  $rx._internal(T val, {String ref}) : super(val, ref:ref);
+  $rx._internal(T val, {String ref, List<String> tags}) : super(val, ref:ref, tags:tags);
 }
 
 class $cmp<T> extends RX<T>
