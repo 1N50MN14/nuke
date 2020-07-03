@@ -1,3 +1,6 @@
+## [0.0.7]
+* Support tagging of observables
+
 ## [0.0.6]
 * $rx.$ref as factory instead of static method
 
