@@ -1,11 +1,6 @@
 # nuke
 
-Coming from a "backend" world where pieces of code are small, light and
-modular; all things "State Mangement" in app land have been a constant
-PITA for a newbie like me. Code generators, builders, pattern X, pattern Y,
-loop strategies and what have you not to the sound of CPU fan throttling.
-
-Lo and behold, a lightweight state management < 220 lines of code.
+Super slim, lightweight, practical state management < 250 lines of code.
 
 [Not for the faint hearted, PRs super appreciated.]
 
@@ -160,6 +155,15 @@ final counter2 = $rx(0, ref:'ref/1');
 final sum = $cmp(['ref/0', 'ref/1'],
   ()=>$rx.$ref('ref/0').value+$rx.$ref('ref/1').value, ref:'ref/sum')
 ```
+
+## Tagging
+```dart
+final counter1 = $rx(0, ref:'ref/0', tags:['dirty']);
+final counter2 = $rx(0, ref:'ref/1', tags:['dirty']);
+
+nuke.diposeTagged(['dirty', 'whatever'], matchAny:true)
+```
+
 
 ## Clean up
 
