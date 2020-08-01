@@ -168,10 +168,13 @@ class _NukePubSub<T>
 
   void disposeRefSubscribers(String ref)
   {
-    _listeners.keys.where((sKey)=>sKey.regexp
-      .where((reg)=>reg.hasMatch(ref)).isNotEmpty)
-        .map((sKey)=>sKey).toList()
-          .forEach((sKey)=>unsubscribe(sKey));
+    if(ref != null)
+    {
+      _listeners.keys.where((sKey)=>sKey.regexp
+        .where((reg)=>reg.hasMatch(ref)).isNotEmpty)
+          .map((sKey)=>sKey).toList()
+            .forEach((sKey)=>unsubscribe(sKey));
+    }
   }
 
   void dispose(Iterable<String> refs)
@@ -249,6 +252,13 @@ class $rx<T> extends RX<T>
   factory $rx.$ref(String ref)
   {
     return _cache[ref] as $rx<T>;
+  }
+
+  factory $rx.$refElse(String ref, T val, {List<String> tags})
+  {
+    final $rx<T> _rx = _cache[ref] as $rx<T>;
+
+    return _rx ?? $rx(val, ref:ref, tags:tags);
   }
 
   $rx._internal(T val, {String ref, List<String> tags}) : super(val, ref:ref, tags:tags);

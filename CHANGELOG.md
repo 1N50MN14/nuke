@@ -1,3 +1,6 @@
+## [0.0.8]
+* Ignore disposeRefSubscribers on accidental null refs
+
 ## [0.0.7]
 * Support tagging of observables
 
