@@ -1,17 +1,17 @@
 import 'dart:async';
+import 'package:equatable/equatable.dart';
 import 'package:path_to_regexp/path_to_regexp.dart';
 import 'package:uuid/uuid.dart';
-import 'package:equatable/equatable.dart';
 
 class RX<T>
 {
-  T _value;
+  T? _value;
 
-  String ref;
+  String? ref;
 
-  List<String> tags = [];
+  List<String>? tags = [];
 
-  Function(T, T) _onChanged;
+  late Function(T?, T?) _onChanged;
 
   final Nuke _instance = Nuke();
 
@@ -21,7 +21,7 @@ class RX<T>
     _instance.registerRx(this);
   }
 
-  set value(T value)
+  set value(T? value)
   {
     if(_value != value)
     {
@@ -30,9 +30,9 @@ class RX<T>
     }
   }
 
-  T get value => _value;
+  T? get value => _value;
 
-  set onChanged(Function(T, T) onChanged)=> _onChanged = onChanged;
+  set onChanged(Function(T?, T?) onChanged)=> _onChanged = onChanged;
 
   void disposeSubs()
   {
@@ -59,7 +59,7 @@ class SubscriptionKey extends Equatable
 
 class NukeEvent<T>
 {
-  final String ref;
+  final String? ref;
 
   final Map<T,T> data;
 
@@ -68,7 +68,7 @@ class NukeEvent<T>
 
 class _NukePubSub<T>
 {
-  final Uuid _uuid = Uuid();
+  final Uuid _uuid = const Uuid();
 
   final StreamController<NukeEvent> _controller =
     StreamController<NukeEvent>.broadcast();
@@ -79,17 +79,17 @@ class _NukePubSub<T>
 
   bool _closed()
   {
-   return _controller?.isClosed;
+   return _controller.isClosed;
   }
 
-  bool _paused(SubscriptionKey subscriptionKey)
+  bool? _paused(SubscriptionKey subscriptionKey)
   {
     return _listeners[subscriptionKey]?.isPaused;
   }
 
   void registerRx(RX<T> rx)
   {
-    rx.onChanged = (T newValue, T oldValue)
+    rx.onChanged = (T? newValue, T? oldValue)
     {
       if(!_closed())
       {
@@ -105,7 +105,7 @@ class _NukePubSub<T>
     return _rx.firstWhere((e) => e.ref == ref);
   }
 
-  void publish(String ref, Map data)
+  void publish(String? ref, Map data)
   {
     if(!_closed())
     {
@@ -114,7 +114,7 @@ class _NukePubSub<T>
   }
 
   SubscriptionKey subscribe(Iterable<String> match,
-    void Function(String ref, Map<T,T> data) onData, {String key})
+    void Function(String? ref, Map<T?,T?> data) onData, {String? key})
   {
     final subscriptionKey = SubscriptionKey(key ?? _uuid.v4(), match);
 
@@ -122,19 +122,19 @@ class _NukePubSub<T>
     {
       _listeners[subscriptionKey] =_controller.stream
           .where((event)=>subscriptionKey.regexp
-            .where((reg)=>reg.hasMatch(event.ref)).isNotEmpty)
+            .where((reg)=>reg.hasMatch(event.ref!)).isNotEmpty)
               .listen((NukeEvent event)=>
-                onData(event.ref, event.data as Map<T,T>));
+                onData(event.ref, event.data as Map<T?,T?>));
     }
 
     return subscriptionKey;
   }
 
-  void unsubscribe(SubscriptionKey subscriptionKey)
+  void unsubscribe(SubscriptionKey? subscriptionKey)
   {
     if(_listeners.containsKey(subscriptionKey))
     {
-      _listeners[subscriptionKey]?.cancel();
+      _listeners[subscriptionKey!]?.cancel();
       _listeners.remove(subscriptionKey);
     }
   }
@@ -142,7 +142,7 @@ class _NukePubSub<T>
 
   void pause(SubscriptionKey subscriptionKey)
   {
-    if(!_paused(subscriptionKey))
+    if(!_paused(subscriptionKey)!)
     {
       _listeners[subscriptionKey]?.pause();
     }
@@ -150,7 +150,7 @@ class _NukePubSub<T>
 
   void resume(SubscriptionKey subscriptionKey)
   {
-    if(_paused(subscriptionKey))
+    if(_paused(subscriptionKey)!)
     {
       _listeners[subscriptionKey]?.resume();
     }
@@ -166,7 +166,7 @@ class _NukePubSub<T>
     _listeners.keys.forEach((key)=>resume(key));
   }
 
-  void disposeRefSubscribers(String ref)
+  void disposeRefSubscribers(String? ref)
   {
     if(ref != null)
     {
@@ -177,7 +177,7 @@ class _NukePubSub<T>
     }
   }
 
-  void dispose(Iterable<String> refs)
+  void dispose(Iterable<String?> refs)
   {
     refs.forEach((ref)
     {
@@ -198,7 +198,7 @@ class _NukePubSub<T>
         return false;
       } else {
 
-        final len = _tags.intersection(Set.from(el.tags)).length;
+        final len = _tags.intersection(Set.from(el.tags!)).length;
 
         final bool match = matchAny ? len>0 : len > tags.length;
 
@@ -213,7 +213,7 @@ class _NukePubSub<T>
 
     if(!_closed())
     {
-      _controller?.close();
+      _controller.close();
     }
   }
 }
@@ -230,14 +230,14 @@ class Nuke extends _NukePubSub
 class $rx<T> extends RX<T>
 {
   //$rx(T val, {String ref}) : super(val, ref:ref);
-  static final Map<String, $rx> _cache = <String, $rx>{};
+  static final Map<String?, $rx> _cache = <String?, $rx>{};
 
-  static void dispose(String ref)
+  static void dispose(String? ref)
   {
     _cache.remove(ref);
   }
 
-  factory $rx(T val, {String ref, List<String> tags})
+  factory $rx(T val, {String? ref, List<String>? tags})
   {
     if(_cache.containsKey(ref))
     {
@@ -254,31 +254,31 @@ class $rx<T> extends RX<T>
     return _cache[ref] as $rx<T>;
   }
 
-  factory $rx.$refElse(String ref, T val, {List<String> tags})
+  factory $rx.$refElse(String ref, T val, {List<String>? tags})
   {
-    final $rx<T> _rx = _cache[ref] as $rx<T>;
+    final $rx<T?>? _rx = _cache[ref] as $rx<T?>?;
 
-    return _rx ?? $rx(val, ref:ref, tags:tags);
+    return _rx as $rx<T>? ?? $rx(val, ref:ref, tags:tags);
   }
 
-  $rx._internal(T val, {String ref, List<String> tags}) : super(val, ref:ref, tags:tags);
+  $rx._internal(T val, {String? ref, List<String>? tags}) : super(val, ref:ref, tags:tags);
 }
 
-class $cmp<T> extends RX<T>
+class $cmp<T> extends RX<T?>
 {
   Iterable<String> refs;
 
   final Function fn;
 
-  SubscriptionKey _subKey;
+  SubscriptionKey? _subKey;
 
-  $cmp(this.refs, this.fn, {String ref}) : super(fn() as T, ref:ref)
+  $cmp(this.refs, this.fn, {String? ref}) : super(fn() as T?, ref:ref)
   {
-    _subKey = _instance.subscribe(refs, (_ref, _data)=>value=fn() as T);
+    _subKey = _instance.subscribe(refs, (_ref, _data)=>value=fn() as T?);
   }
 
   @override
-  T get value => fn() as T;
+  T? get value => fn() as T?;
 
   void dispose()
   {

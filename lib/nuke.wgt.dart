@@ -7,7 +7,7 @@ class RX extends StatefulWidget
 
   @required final Widget Function(BuildContext context, ) builder;
 
-  const RX(this.matchers, this.builder, {Key key} )
+  const RX(this.matchers, this.builder, {Key? key} )
     : super(key: key);
 
   @override _NukeWidgetState createState() => _NukeWidgetState();
@@ -17,20 +17,19 @@ class _NukeWidgetState extends State<RX>
 {
   final _instance = Nuke();
 
-  SubscriptionKey subscriptionKey;
+  SubscriptionKey? subscriptionKey;
 
   @override
   void initState()
   {
     super.initState();
 
-    final _matchers = widget.matchers.where((m) =>m!=null);
 
-    if(_matchers.isNotEmpty)
+    if(widget.matchers.isNotEmpty)
     {
-      subscriptionKey = _instance.subscribe(widget.matchers.where((m) =>m!=null),
+      subscriptionKey = _instance.subscribe(widget.matchers,
         (_ref, _data) => setState(() {}),
-        key:widget.hashCode.toString()
+          key:widget.hashCode.toString()
       );
     }
   }

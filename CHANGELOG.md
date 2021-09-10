@@ -1,3 +1,9 @@
+## [0.0.10]
+* null safety
+
+## [0.0.9]
+* bump deps
+
 ## [0.0.8]
 * Ignore disposeRefSubscribers on accidental null refs
 
