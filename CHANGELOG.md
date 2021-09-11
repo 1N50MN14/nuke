@@ -1,3 +1,6 @@
+## [0.0.11]
+* ref defaults to empty string
+
 ## [0.0.10]
 * null safety
 

@@ -7,7 +7,7 @@ class RX<T>
 {
   T? _value;
 
-  String? ref;
+  String? _ref;
 
   List<String>? tags = [];
 
@@ -15,8 +15,9 @@ class RX<T>
 
   final Nuke _instance = Nuke();
 
-  RX(T value, {this.ref, this.tags})
+  RX(T value, {String? ref, this.tags})
   {
+    _ref = ref;
     _value = value;
     _instance.registerRx(this);
   }
@@ -29,6 +30,8 @@ class RX<T>
       _value = value;
     }
   }
+
+  String get ref => _ref ?? '';
 
   T? get value => _value;
 
